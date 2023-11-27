@@ -6,8 +6,8 @@ package controltower
 import (
 	"context"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/controltower"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/controltower"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-aws/internal/conns"
@@ -35,7 +35,7 @@ func DataSourceControls() *schema.Resource {
 }
 
 func DataSourceControlsRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	conn := meta.(*conns.AWSClient).ControlTowerConn(ctx)
+	conn := meta.(*conns.AWSClient).ControlTowerClient(ctx)
 
 	targetIdentifier := d.Get("target_identifier").(string)
 	input := &controltower.ListEnabledControlsInput{
@@ -43,23 +43,18 @@ func DataSourceControlsRead(ctx context.Context, d *schema.ResourceData, meta in
 	}
 
 	var controls []string
-	err := conn.ListEnabledControlsPagesWithContext(ctx, input, func(page *controltower.ListEnabledControlsOutput, lastPage bool) bool {
-		if page == nil {
-			return !lastPage
+	paginator := controltower.NewListEnabledControlsPaginator(conn, input)
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			return diag.Errorf("listing ControlTower Controls (%s): %s", targetIdentifier, err)
 		}
-
-		for _, control := range page.EnabledControls {
-			if control == nil {
+		for _, v := range page.EnabledControls {
+			if v.ControlIdentifier == nil {
 				continue
 			}
-			controls = append(controls, aws.StringValue(control.ControlIdentifier))
+			controls = append(controls, aws.ToString(v.ControlIdentifier))
 		}
-
-		return !lastPage
-	})
-
-	if err != nil {
-		return diag.Errorf("listing ControlTower Controls (%s): %s", targetIdentifier, err)
 	}
 
 	d.SetId(targetIdentifier)
