@@ -15,11 +15,16 @@ import (
 type servicePackage struct{}
 
 func (p *servicePackage) FrameworkDataSources(ctx context.Context) []*types.ServicePackageFrameworkDataSource {
-	return []*types.ServicePackageFrameworkDataSource{}
+	return []*types.ServicePackageFrameworkDataSource{{
+		Factory:  newDataSourceGroups,
+		Name: "Groups",
+	},}
 }
 
 func (p *servicePackage) FrameworkResources(ctx context.Context) []*types.ServicePackageFrameworkResource {
-	return []*types.ServicePackageFrameworkResource{}
+	return []*types.ServicePackageFrameworkResource{
+		
+	}
 }
 
 func (p *servicePackage) SDKDataSources(ctx context.Context) []*types.ServicePackageSDKDataSource {
@@ -27,7 +32,7 @@ func (p *servicePackage) SDKDataSources(ctx context.Context) []*types.ServicePac
 		{
 			Factory:  DataSourceGroup,
 			TypeName: "aws_identitystore_group",
-		},
+		}, 
 		{
 			Factory:  DataSourceUser,
 			TypeName: "aws_identitystore_user",
